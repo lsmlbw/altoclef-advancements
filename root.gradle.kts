@@ -1,3 +1,13 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven("https://jitpack.io")
+        maven("https://maven.fabricmc.net")
+    }
+    dependencies {
+        classpath("com.github.replaymod:preprocessor:c2041a3")
+    }
+}
 plugins {
     id("fabric-loom") version "1.7-SNAPSHOT" apply false
     id("com.replaymod.preprocess") version "c2041a3"
