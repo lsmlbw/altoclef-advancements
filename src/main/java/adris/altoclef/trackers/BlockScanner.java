@@ -13,6 +13,7 @@ import adris.altoclef.util.time.TimerGame;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
@@ -42,8 +43,8 @@ public class BlockScanner {
     private Dimension scanDimension = Dimension.OVERWORLD;
     private World scanWorld = null;
 
-    private boolean scanning = false;
-    private boolean forceStop = false;
+    private volatile boolean scanning = false;
+    private volatile boolean forceStop = false;
 
 
     public BlockScanner(AltoClef mod) {
@@ -255,17 +256,19 @@ public class BlockScanner {
     }
 
     public void tick() {
-        if (mod.getWorld() == null || mod.getPlayer() == null) return;
+        ClientWorld world = mod.getWorld();
+        ClientPlayerEntity player = mod.getPlayer();
+        if (world == null || player == null) return;
         //be maximally aware of the closest blocks around you
         scanCloseBlocks();
         if (!rescanTimer.elapsed() || scanning) return;
 
-        if (scanDimension != WorldHelper.getCurrentDimension() || mod.getWorld() != scanWorld) {
+        if (scanDimension != WorldHelper.getCurrentDimension() || world != scanWorld) {
             if (LOG) {
                 mod.log("BlockScanner: new dimension or world detected, resetting data!");
             }
             reset();
-            scanWorld = mod.getWorld();
+            scanWorld = world;
             scanDimension = WorldHelper.getCurrentDimension();
             return;
         }
@@ -283,11 +286,13 @@ public class BlockScanner {
         forceStop = false;
         new Thread(() -> {
             try {
-                rescan(Integer.MAX_VALUE, Integer.MAX_VALUE);
+                rescan(Integer.MAX_VALUE, Integer.MAX_VALUE, world, player);
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
-                rescanTimer.reset();
+                if (AltoClef.inGame()) {
+                    rescanTimer.reset();
+                }
                 scanning = false;
             }
         }).start();
@@ -339,28 +344,33 @@ public class BlockScanner {
         }
     }
 
-    private void rescan(int maxCount, int cutOffRadius) {
+    private void rescan(int maxCount, int cutOffRadius, ClientWorld world, ClientPlayerEntity player) {
         long ms = System.currentTimeMillis();
 
-        ChunkPos playerChunkPos = mod.getPlayer().getChunkPos();
-        Vec3d playerPos = mod.getPlayer().getPos();
+        ChunkPos playerChunkPos = player.getChunkPos();
+        Vec3d playerPos = player.getPos();
 
         HashSet<ChunkPos> visited = new HashSet<>();
         Queue<Node> queue = new ArrayDeque<>();
         queue.add(new Node(playerChunkPos, 0));
 
         while (!queue.isEmpty() && visited.size() < maxCount && !forceStop) {
+            if (mod.getWorld() != world || mod.getPlayer() != player) {
+                return;
+            }
             Node node = queue.poll();
 
-            if (node.distance > cutOffRadius || visited.contains(node.pos) || !mod.getWorld().getChunkManager().isChunkLoaded(node.pos.x, node.pos.z))
+            if (node.distance > cutOffRadius || visited.contains(node.pos)
+                    || !world.getChunkManager().isChunkLoaded(node.pos.x, node.pos.z))
                 continue;
 
             boolean isPriorityChunk = getChunkDist(node.pos, playerChunkPos) <= 2;
-            if (!isPriorityChunk && scannedChunks.containsKey(node.pos) && mod.getWorld().getTime() - scannedChunks.get(node.pos) < RESCAN_TICK_DELAY)
+            if (!isPriorityChunk && scannedChunks.containsKey(node.pos)
+                    && world.getTime() - scannedChunks.get(node.pos) < RESCAN_TICK_DELAY)
                 continue;
 
             visited.add(node.pos);
-            scanChunk(node.pos, playerChunkPos);
+            scanChunk(node.pos, playerChunkPos, world);
 
             queue.add(new Node(new ChunkPos(node.pos.x + 1, node.pos.z + 1), node.distance + 1));
             queue.add(new Node(new ChunkPos(node.pos.x - 1, node.pos.z + 1), node.distance + 1));
@@ -425,14 +435,16 @@ public class BlockScanner {
      *
      * @param chunkPos position of the scanned chunk
      */
-    private void scanChunk(ChunkPos chunkPos, ChunkPos playerChunkPos) {
-        World world = mod.getWorld();
-        WorldChunk chunk = mod.getWorld().getChunk(chunkPos.x, chunkPos.z);
+    private void scanChunk(ChunkPos chunkPos, ChunkPos playerChunkPos, World world) {
+        WorldChunk chunk = world.getChunk(chunkPos.x, chunkPos.z);
         scannedChunks.put(chunkPos, world.getTime());
 
         boolean isPriorityChunk = getChunkDist(chunkPos, playerChunkPos) <= 2;
 
         for (int x = chunkPos.getStartX(); x <= chunkPos.getEndX(); x++) {
+            if (forceStop || mod.getWorld() != world) {
+                return;
+            }
             for (int y = world.getBottomY(); y < world.getTopY(); y++) {
                 for (int z = chunkPos.getStartZ(); z <= chunkPos.getEndZ(); z++) {
                     BlockPos p = new BlockPos(x, y, z);

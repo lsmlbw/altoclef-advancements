@@ -21,7 +21,12 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.Item;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Arrays;
@@ -78,6 +83,11 @@ public class PlaceBlockTask extends Task implements ITaskRequiresGrounded {
     @Override
     protected Task onTick() {
         AltoClef mod = AltoClef.getInstance();
+        if (isFinished()) {
+            mod.getClientBaritone().getBuilderProcess().onLostControl();
+            mod.getInputControls().release(Input.SNEAK);
+            return null;
+        }
 
         if (WorldHelper.isInNetherPortal()) {
             if (!mod.getClientBaritone().getPathingBehavior().isPathing()) {
@@ -123,6 +133,13 @@ public class PlaceBlockTask extends Task implements ITaskRequiresGrounded {
             }
         }
 
+        if (tryPlaceDirectly(mod)) {
+            return null;
+        }
+        Task approachSupport = getSupportApproachTask(mod);
+        if (approachSupport != null) {
+            return approachSupport;
+        }
 
         // Check if we're approaching our point. If we fail, wander for a bit.
         if (!progressChecker.check(mod)) {
@@ -134,7 +151,6 @@ public class PlaceBlockTask extends Task implements ITaskRequiresGrounded {
                 Debug.logMessage("Trying alternative way of placing block...");
             }
         }
-
 
         // Place block
         if (tryingAlternativeWay()) {
@@ -152,9 +168,93 @@ public class PlaceBlockTask extends Task implements ITaskRequiresGrounded {
         return null;
     }
 
+    private boolean tryPlaceDirectly(AltoClef mod) {
+        if (mod.getExtraBaritoneSettings().isInteractionPaused()
+                || !WorldHelper.canPlace(target)
+                || !mod.getWorld().getBlockState(target).isReplaceable()) {
+            return false;
+        }
+
+        Vec3d cameraPos = mod.getPlayer().getCameraPosVec(1.0F);
+        for (Direction offset : Direction.values()) {
+            BlockPos supportPos = target.offset(offset);
+            if (!WorldHelper.isSolidBlock(supportPos)) {
+                continue;
+            }
+
+            Direction face = offset.getOpposite();
+            Vec3d hitPos = Vec3d.ofCenter(supportPos).add(
+                    face.getOffsetX() * 0.5,
+                    face.getOffsetY() * 0.5,
+                    face.getOffsetZ() * 0.5);
+            if (cameraPos.squaredDistanceTo(hitPos) > 4.25 * 4.25) {
+                continue;
+            }
+
+            Item[] placeItems = ItemHelper.blocksToItems(toPlace);
+            if (useThrowaways) {
+                placeItems = ArrayUtils.addAll(placeItems,
+                        mod.getClientBaritoneSettings().acceptableThrowawayItems.value.toArray(new Item[0]));
+            }
+            if (!mod.getSlotHandler().forceEquipItem(placeItems)) {
+                return false;
+            }
+            mod.getClientBaritone().getBuilderProcess().onLostControl();
+            mod.getInputControls().hold(Input.SNEAK);
+            BlockHitResult hit = new BlockHitResult(hitPos, face, supportPos, false);
+            ActionResult result = mod.getController().interactBlock(mod.getPlayer(), Hand.MAIN_HAND, hit);
+            if (result.shouldSwingHand()) {
+                mod.getPlayer().swingHand(Hand.MAIN_HAND);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private Task getSupportApproachTask(AltoClef mod) {
+        if (!WorldHelper.canPlace(target)
+                || !mod.getWorld().getBlockState(target).isReplaceable()) {
+            return null;
+        }
+
+        Vec3d cameraPos = mod.getPlayer().getCameraPosVec(1.0F);
+        BlockPos nearestSupport = null;
+        double nearestDistance = Double.POSITIVE_INFINITY;
+        for (Direction offset : Direction.values()) {
+            BlockPos supportPos = target.offset(offset);
+            if (!WorldHelper.isSolidBlock(supportPos)) {
+                continue;
+            }
+            Direction face = offset.getOpposite();
+            Vec3d hitPos = Vec3d.ofCenter(supportPos).add(
+                    face.getOffsetX() * 0.5,
+                    face.getOffsetY() * 0.5,
+                    face.getOffsetZ() * 0.5);
+            double distance = cameraPos.squaredDistanceTo(hitPos);
+            if (distance < nearestDistance) {
+                nearestDistance = distance;
+                nearestSupport = supportPos;
+            }
+        }
+        if (nearestSupport != null) {
+            return nearestDistance > 4.25 * 4.25
+                    ? goToSupport(mod, nearestSupport)
+                    : new GetToBlockTask(nearestSupport);
+        }
+        return cameraPos.squaredDistanceTo(Vec3d.ofCenter(target)) <= 4.25 * 4.25
+                ? wanderTask
+                : null;
+    }
+
+    private Task goToSupport(AltoClef mod, BlockPos support) {
+        mod.getClientBaritone().getBuilderProcess().onLostControl();
+        return new GetToBlockTask(support);
+    }
+
     @Override
     protected void onStop(Task interruptTask) {
         AltoClef.getInstance().getClientBaritone().getBuilderProcess().onLostControl();
+        AltoClef.getInstance().getInputControls().release(Input.SNEAK);
     }
 
     //TODO: Place structure where a leaf block was???? Might need to delete the block first if it's not empty/air/water.

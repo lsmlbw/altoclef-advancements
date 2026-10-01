@@ -1,17 +1,17 @@
 pluginManagement {
     repositories {
-        mavenCentral()
         gradlePluginPortal()
-        maven("https://jitpack.io")
+        mavenCentral()
         maven("https://maven.fabricmc.net")
+        maven("https://jitpack.io")
     }
-
-    // Maps the plugin ID to its actual JitPack artifact coordinate
     resolutionStrategy {
         eachPlugin {
             if (requested.id.id == "com.replaymod.preprocess") {
-                useModule("com.github.replaymod:preprocessor:${requested.version}")
+                useModule("com.github.Fallen-Breath:preprocessor:d452ef7")
             }
         }
     }
 }
+
+rootProject.name = "altoclef"

@@ -1,14 +1,20 @@
 package adris.altoclef.tasks.movement;
 
 import adris.altoclef.AltoClef;
+import adris.altoclef.TaskCatalogue;
+import adris.altoclef.tasks.DoToClosestBlockTask;
+import adris.altoclef.tasks.InteractWithBlockTask;
 import adris.altoclef.tasks.construction.compound.ConstructNetherPortalBucketTask;
 import adris.altoclef.tasks.construction.compound.ConstructNetherPortalObsidianTask;
 import adris.altoclef.tasksystem.Task;
 import adris.altoclef.util.Dimension;
 import adris.altoclef.util.helpers.WorldHelper;
+import net.minecraft.block.EndPortalFrameBlock;
 import net.minecraft.block.Blocks;
+import net.minecraft.item.Items;
 import net.minecraft.util.math.BlockPos;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -22,6 +28,7 @@ public class DefaultGoToDimensionTask extends Task {
     private final Dimension _target;
     // Cached to keep build properties alive if this task pauses/resumes.
     private final Task _cachedNetherBucketConstructionTask = new ConstructNetherPortalBucketTask();
+    private final GoToStrongholdPortalTask _cachedStrongholdTask = new GoToStrongholdPortalTask(12);
 
     public DefaultGoToDimensionTask(Dimension target) {
         _target = target;
@@ -129,9 +136,44 @@ public class DefaultGoToDimensionTask extends Task {
     }
 
     private Task goToEndTask() {
-        // Keep in mind that getting to the end requires going to the nether first.
-        setDebugState("TODO: Get to End, Same as BeatMinecraft");
-        return null;
+        AltoClef mod = AltoClef.getInstance();
+        if (mod.getBlockScanner().anyFound(Blocks.END_PORTAL)) {
+            mod.getExtraBaritoneSettings().canWalkOnEndPortal(true);
+            setDebugState("Entering the End portal");
+            return new DoToClosestBlockTask(blockPos -> new GetToBlockTask(blockPos.up()), Blocks.END_PORTAL);
+        }
+
+        List<BlockPos> frames = mod.getBlockScanner().getKnownLocations(Blocks.END_PORTAL_FRAME);
+        Optional<BlockPos> closestFrame = frames.stream()
+                .min((left, right) -> Double.compare(
+                        left.getSquaredDistance(mod.getPlayer().getBlockPos()),
+                        right.getSquaredDistance(mod.getPlayer().getBlockPos())));
+        if (closestFrame.isPresent()) {
+            BlockPos portalFrame = closestFrame.get();
+            frames = frames.stream().filter(pos -> pos.isWithinDistance(portalFrame, 20)).toList();
+        }
+        long filledFrames = frames.stream()
+                .filter(mod.getChunkTracker()::isChunkLoaded)
+                .filter(pos -> mod.getWorld().getBlockState(pos).isOf(Blocks.END_PORTAL_FRAME))
+                .filter(pos -> mod.getWorld().getBlockState(pos).get(EndPortalFrameBlock.EYE))
+                .count();
+        if (frames.size() >= 12 && filledFrames < 12) {
+            int eyesNeeded = 12 - (int) filledFrames;
+            if (mod.getItemStorage().getItemCount(Items.ENDER_EYE) < eyesNeeded) {
+                setDebugState("Collecting eyes to activate the End portal");
+                return TaskCatalogue.getItemTask(Items.ENDER_EYE, eyesNeeded);
+            }
+            setDebugState("Activating the End portal");
+            return new DoToClosestBlockTask(
+                    pos -> new InteractWithBlockTask(Items.ENDER_EYE, pos),
+                    pos -> mod.getChunkTracker().isChunkLoaded(pos)
+                            && mod.getWorld().getBlockState(pos).isOf(Blocks.END_PORTAL_FRAME)
+                            && !mod.getWorld().getBlockState(pos).get(EndPortalFrameBlock.EYE),
+                    Blocks.END_PORTAL_FRAME);
+        }
+
+        setDebugState("Locating the End portal in the stronghold");
+        return _cachedStrongholdTask;
     }
 
     private boolean netherPortalIsClose(AltoClef mod) {

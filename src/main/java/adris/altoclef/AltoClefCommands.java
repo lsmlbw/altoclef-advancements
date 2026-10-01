@@ -38,6 +38,10 @@ public class AltoClefCommands {
                 new MarvionCommand(),
                 new DummyTaskCommand(),
                 new FollowCommand(),
+                new MinecraftCommand(),
+                new PunkCommand(),
+                new ShootCommand(),
+                new TerminateCommand(),
                 new ScanCommand(),
                 new GiveCommand()
         );

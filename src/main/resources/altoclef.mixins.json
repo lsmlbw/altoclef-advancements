@@ -7,6 +7,7 @@
     "AbstractFurnaceScreenHandlerAccessor",
     "AxeItemAccessor",
     "BlockModifiedByPlayerMixin",
+    "BrushableBlockEntityAccessor",
     "ClientBlockBreakAccessor",
     "ClientConnectionAccessor",
     "ClientInteractWithBlockMixin",
@@ -21,6 +22,7 @@
     "WorldBlockModifiedMixin"
   ],
   "client": [
+    "ClientAdvancementManagerAccessor",
     "ChatInputMixin",
     "ChatInputSuggestorMixin",
     "ChatReadMixin",

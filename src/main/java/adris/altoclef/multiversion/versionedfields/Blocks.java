@@ -11,7 +11,22 @@ public abstract class Blocks extends net.minecraft.block.Blocks {
 
     public static final Block UNSUPPORTED = VersionedFieldHelper.createUnsafeUnsupportedBlock();
 
+    //#if MC <= 12006
+    //$$ public static Block TRIAL_SPAWNER = UNSUPPORTED;
+    //$$ public static Block VAULT = UNSUPPORTED;
+    //$$ public static Block CRAFTER = UNSUPPORTED;
+    //$$ public static Block COPPER_BULB = UNSUPPORTED;
+    //$$ public static Block EXPOSED_COPPER_BULB = UNSUPPORTED;
+    //$$ public static Block WEATHERED_COPPER_BULB = UNSUPPORTED;
+    //$$ public static Block OXIDIZED_COPPER_BULB = UNSUPPORTED;
+    //$$ public static Block WAXED_COPPER_BULB = UNSUPPORTED;
+    //$$ public static Block WAXED_EXPOSED_COPPER_BULB = UNSUPPORTED;
+    //$$ public static Block WAXED_WEATHERED_COPPER_BULB = UNSUPPORTED;
+    //$$ public static Block WAXED_OXIDIZED_COPPER_BULB = UNSUPPORTED;
+    //#endif
+
     //#if MC <= 11802
+    //$$ public static final Block SCULK_CATALYST = UNSUPPORTED;
     //$$ public static final Block MANGROVE_PROPAGULE = UNSUPPORTED;
     //$$ public static final Block CHERRY_LEAVES = UNSUPPORTED;
     //$$ public static final Block MANGROVE_SIGN = UNSUPPORTED;

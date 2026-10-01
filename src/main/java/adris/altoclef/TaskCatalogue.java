@@ -86,6 +86,7 @@ public class TaskCatalogue {
             mine("clay_ball", Blocks.CLAY, Items.CLAY_BALL);
             mine("ancient_debris", MiningRequirement.DIAMOND, Blocks.ANCIENT_DEBRIS, Items.ANCIENT_DEBRIS).forceDimension(Dimension.NETHER);
             mine("gilded_blackstone", MiningRequirement.STONE, Blocks.GILDED_BLACKSTONE, Items.GILDED_BLACKSTONE).forceDimension(Dimension.NETHER);
+            mine("crying_obsidian", MiningRequirement.DIAMOND, Blocks.CRYING_OBSIDIAN, Items.CRYING_OBSIDIAN);
             mine("oak_sapling", Blocks.OAK_LEAVES, Items.OAK_SAPLING);
             mine("spruce_sapling", Blocks.SPRUCE_LEAVES, Items.SPRUCE_SAPLING);
             mine("birch_sapling", Blocks.BIRCH_LEAVES, Items.BIRCH_SAPLING);
@@ -115,10 +116,17 @@ public class TaskCatalogue {
             mob("rabbit_hide", Items.RABBIT_HIDE, RabbitEntity.class);
             mob("slime_ball", Items.SLIME_BALL, SlimeEntity.class);
             mob("wither_skeleton_skull", Items.WITHER_SKELETON_SKULL, WitherSkeletonEntity.class).forceDimension(Dimension.NETHER);
+            mob("ghast_tear", Items.GHAST_TEAR, GhastEntity.class).forceDimension(Dimension.NETHER);
+            mob("totem_of_undying", Items.TOTEM_OF_UNDYING, EvokerEntity.class);
+            mob("phantom_membrane", Items.PHANTOM_MEMBRANE, PhantomEntity.class);
+            mob("breeze_rod", Items.BREEZE_ROD, BreezeEntity.class);
+            mob("pufferfish", Items.PUFFERFISH, PufferfishEntity.class);
+            simple("turtle_scute", Items.TURTLE_SCUTE, CollectTurtleScuteTask::new);
             mob("ink_sac", Items.INK_SAC, SquidEntity.class); // Warning, this probably won't work.
             mob("glow_ink_sac", Items.GLOW_INK_SAC, Entities.GLOW_SQUID); // Warning, this probably won't work.
             mob("string", Items.STRING, SpiderEntity.class); // Warning, this probably won't work.
             mine("sugar_cane", Items.SUGAR_CANE);
+            mine("seagrass", Blocks.SEAGRASS, Items.SEAGRASS);
             mine("brown_mushroom", MiningRequirement.HAND, new Block[]{Blocks.BROWN_MUSHROOM, Blocks.BROWN_MUSHROOM_BLOCK}, Items.BROWN_MUSHROOM);
             mine("red_mushroom", MiningRequirement.HAND, new Block[]{Blocks.RED_MUSHROOM, Blocks.RED_MUSHROOM_BLOCK}, Items.RED_MUSHROOM);
             mine("mushroom", MiningRequirement.HAND, new Block[]{Blocks.BROWN_MUSHROOM, Blocks.BROWN_MUSHROOM_BLOCK, Blocks.RED_MUSHROOM, Blocks.RED_MUSHROOM_BLOCK}, Items.BROWN_MUSHROOM, Items.RED_MUSHROOM);
@@ -126,6 +134,7 @@ public class TaskCatalogue {
             mine("pumpkin", MiningRequirement.HAND, Blocks.PUMPKIN, Items.PUMPKIN);
             mine("bell", MiningRequirement.WOOD, Blocks.BELL, Items.BELL);
             mine("nether_wart", MiningRequirement.HAND, Blocks.NETHER_WART, Items.NETHER_WART).forceDimension(Dimension.NETHER);
+            mine("sculk_catalyst", MiningRequirement.WOOD, Blocks.SCULK_CATALYST, Items.SCULK_CATALYST);
             mine("crimson_fungus", MiningRequirement.HAND, Blocks.CRIMSON_FUNGUS, Items.CRIMSON_FUNGUS).forceDimension(Dimension.NETHER);
             mine("warped_fungus", MiningRequirement.HAND, Blocks.WARPED_FUNGUS, Items.WARPED_FUNGUS).forceDimension(Dimension.NETHER);
             mine("crimson_roots", MiningRequirement.HAND, Blocks.CRIMSON_ROOTS, Items.CRIMSON_ROOTS).forceDimension(Dimension.NETHER);
@@ -246,6 +255,27 @@ public class TaskCatalogue {
             shapedRecipe3x3Block("slime_block", Items.SLIME_BLOCK, "slime_ball");
             shapedRecipe3x3Block("melon", Items.MELON, "melon_slice").dontMineIfPresent();
             shapedRecipe2x2Block("glowstone", Items.GLOWSTONE, "glowstone_dust").dontMineIfPresent();
+            //#if MC > 12006
+            shapedRecipe3x3("copper_bulb", Items.COPPER_BULB, 4,
+                    o, "copper_block", o,
+                    "copper_block", "blaze_rod", "copper_block",
+                    o, "redstone", o);
+            //#endif
+            shapedRecipe3x3("respawn_anchor", Items.RESPAWN_ANCHOR, 1,
+                    "crying_obsidian", "crying_obsidian", "crying_obsidian",
+                    "glowstone", "glowstone", "glowstone",
+                    "crying_obsidian", "crying_obsidian", "crying_obsidian");
+            shapedRecipe3x3("turtle_helmet", Items.TURTLE_HELMET, 1,
+                    "turtle_scute", "turtle_scute", "turtle_scute",
+                    "turtle_scute", o, "turtle_scute",
+                    o, o, o);
+            put("beacon", new Item[]{Items.BEACON}, count -> new CraftInTableTask(
+                    new RecipeTarget(Items.BEACON, count, CraftingRecipe.newShapedRecipe("beacon",
+                            new ItemTarget[]{
+                                    new ItemTarget(Items.GLASS), new ItemTarget(Items.GLASS), new ItemTarget(Items.GLASS),
+                                    new ItemTarget(Items.GLASS), new ItemTarget(Items.NETHER_STAR), new ItemTarget(Items.GLASS),
+                                    new ItemTarget(Items.OBSIDIAN), new ItemTarget(Items.OBSIDIAN), new ItemTarget(Items.OBSIDIAN)
+                            }, 1))));
             shapedRecipe2x2Block("clay", Items.CLAY, "clay_ball").dontMineIfPresent();
             smelt("netherite_scrap", Items.NETHERITE_SCRAP, "ancient_debris");
             shapedRecipe3x3("netherite_ingot", Items.NETHERITE_INGOT, 1, "netherite_scrap", "netherite_scrap", "netherite_scrap", "netherite_scrap", "gold_ingot", "gold_ingot", "gold_ingot", "gold_ingot", o);
@@ -299,8 +329,21 @@ public class TaskCatalogue {
             alias("book_and_quill", "writable_book");
             shapedRecipe3x3("bowl", Items.BOWL, 4, p, o, p, o, p, o, o, o, o);
             shapedRecipe2x2("blaze_powder", Items.BLAZE_POWDER, 2, "blaze_rod", o, o, o);
+            //#if MC > 12006
+            shapedRecipe2x2("wind_charge", Items.WIND_CHARGE, 4, "breeze_rod", o, o, o);
+            //#endif
             shapedRecipe2x2("ender_eye", Items.ENDER_EYE, 1, "blaze_powder", "ender_pearl", o, o);
             alias("eye_of_ender", "ender_eye");
+            shapedRecipe3x3("end_crystal", Items.END_CRYSTAL, 1,
+                    "glass", "glass", "glass",
+                    "glass", "ender_eye", "glass",
+                    "glass", "ghast_tear", "glass");
+            //#if MC > 12006
+            shapedRecipe3x3("mace", Items.MACE, 1,
+                    o, "heavy_core", o,
+                    o, "breeze_rod", o,
+                    o, o, o);
+            //#endif
             shapedRecipe2x2("fermented_spider_eye", Items.FERMENTED_SPIDER_EYE, 1, "brown_mushroom", "sugar", o, "spider_eye");
             shapedRecipe3x3("fire_charge", Items.FIRE_CHARGE, 3, o, "blaze_powder", o, o, "coal", o, o, "gunpowder", o);
             shapedRecipe2x2("flower_banner_pattern", Items.FLOWER_BANNER_PATTERN, 1, "paper", "oxeye_daisy", o, o);
@@ -445,15 +488,21 @@ public class TaskCatalogue {
             shapedRecipe3x3("lead", Items.LEAD, 1, "string", "string", o, "string", "slime_ball", o, o, o, "string");
 
             simple("honeycomb", Items.HONEYCOMB, CollectHoneycombTask::new);
+            simple("honey_bottle", Items.HONEY_BOTTLE, CollectHoneyBottlesTask::new);
             {
                 String h = "honeycomb";
                 shapedRecipe2x2Block("honeycomb_block", Items.HONEYCOMB_BLOCK, h);
+                shapedRecipe2x2Block("honey_block", Items.HONEY_BLOCK, "honey_bottle");
                 shapedRecipe2x2("candle", Items.CANDLE, 1, "string", o, h, o);
                 shapedRecipe3x3("beehive", Items.BEEHIVE, 1, p, p, p, h, h, h, p, p, p);
             }
 
             // FURNITURE
             shapedRecipe2x2("crafting_table", Items.CRAFTING_TABLE, 1, p, p, p, p).dontMineIfPresent();
+            shapedRecipe3x3("scaffolding", Items.SCAFFOLDING, 6,
+                    "bamboo", "string", "bamboo",
+                    "bamboo", o, "bamboo",
+                    "bamboo", o, "bamboo");
             shapedRecipe3x3("smithing_table", Items.SMITHING_TABLE, 1, "iron_ingot", "iron_ingot", o, p, p, o, p, p, o);
             shapedRecipe3x3("grindstone", Items.GRINDSTONE, 1, s, "stone_slab", s, p, o, p, o, o, o);
             simple("wooden_pressure_plate", ItemHelper.WOOD_PRESSURE_PLATE, CollectWoodenPressurePlateTask::new);
@@ -470,6 +519,12 @@ public class TaskCatalogue {
                 String c = "cobblestone";
                 shapedRecipe3x3("furnace", Items.FURNACE, 1, c, c, c, c, o, c, c, c, c).dontMineIfPresent();
                 shapedRecipe3x3("dropper", Items.DROPPER, 1, c, c, c, c, o, c, c, "redstone", c);
+                //#if MC > 12006
+                shapedRecipe3x3("crafter", Items.CRAFTER, 1,
+                        "iron_ingot", "iron_ingot", "iron_ingot",
+                        "iron_ingot", "crafting_table", "iron_ingot",
+                        "redstone", "dropper", "redstone");
+                //#endif
                 shapedRecipe3x3("dispenser", Items.DISPENSER, 1, c, c, c, c, "bow", c, c, "redstone", c);
                 shapedRecipe3x3("brewing_stand", Items.BREWING_STAND, 1, o, o, o, o, "blaze_rod", o, c, c, c);
                 shapedRecipe3x3("piston", Items.PISTON, 1, p, p, p, c, "iron_ingot", c, c, "redstone", c);

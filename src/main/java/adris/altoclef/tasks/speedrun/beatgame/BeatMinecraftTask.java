@@ -99,6 +99,7 @@ public class BeatMinecraftTask extends Task {
     private final Task getOneBedTask = TaskCatalogue.getItemTask("bed", 1);
     private final Task sleepThroughNightTask = new SleepThroughNightTask();
     private final Task killDragonBedStratsTask = new KillEnderDragonWithBedsTask();
+    private final EndGatewayTask endGatewayTask = new EndGatewayTask();
     // End specific dragon breath avoidance
     private final DragonBreathTracker dragonBreathTracker = new DragonBreathTracker();
     private final TimerGame timer1 = new TimerGame(5);
@@ -242,7 +243,12 @@ public class BeatMinecraftTask extends Task {
             Debug.logInternal("Initializing BeatMinecraftConfig");
             config = new BeatMinecraftConfig();
         }
+
         return config;
+    }
+
+    public boolean wasRemoteGetawaySuccessful() {
+        return endGatewayTask.wasSuccessful();
     }
 
     /**
@@ -1489,8 +1495,15 @@ public class BeatMinecraftTask extends Task {
 
             // If we find an ender portal, just GO to it!!!
             if (mod.getBlockScanner().anyFound(Blocks.END_PORTAL)) {
-                setDebugState("WOOHOO");
                 dragonIsDead = true;
+                if (!endGatewayTask.isFinished()) {
+                    setDebugState("Entering an End gateway before leaving the End");
+                    return endGatewayTask;
+                }
+                if (!endGatewayTask.wasSuccessful()) {
+                    mod.logWarning("Could not complete Remote Getaway automatically; no usable End gateway was found or entered.");
+                }
+                setDebugState("WOOHOO");
                 enterindEndPortal = true;
                 if (!mod.getExtraBaritoneSettings().isCanWalkOnEndPortal()) {
                     mod.getExtraBaritoneSettings().canWalkOnEndPortal(true);

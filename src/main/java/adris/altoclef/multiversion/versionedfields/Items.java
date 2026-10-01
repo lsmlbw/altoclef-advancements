@@ -84,7 +84,25 @@ public class Items extends net.minecraft.item.Items {
     //$$ public static final Item MUD = UNSUPPORTED;
     //#endif
 
-    //#if MC <=11605
+    //#if MC <= 12006
+    //$$ public static final Item CRAFTER = UNSUPPORTED;
+    //$$ public static final Item MACE = UNSUPPORTED;
+    //$$ public static final Item HEAVY_CORE = UNSUPPORTED;
+    //$$ public static final Item TRIAL_KEY = UNSUPPORTED;
+    //$$ public static final Item OMINOUS_TRIAL_KEY = UNSUPPORTED;
+    //$$ public static final Item OMINOUS_BOTTLE = UNSUPPORTED;
+    //$$ public static final Item WIND_CHARGE = UNSUPPORTED;
+    //$$ public static final Item COPPER_BULB = UNSUPPORTED;
+    //$$ public static final Item EXPOSED_COPPER_BULB = UNSUPPORTED;
+    //$$ public static final Item WEATHERED_COPPER_BULB = UNSUPPORTED;
+    //$$ public static final Item OXIDIZED_COPPER_BULB = UNSUPPORTED;
+    //$$ public static final Item WAXED_COPPER_BULB = UNSUPPORTED;
+    //$$ public static final Item WAXED_EXPOSED_COPPER_BULB = UNSUPPORTED;
+    //$$ public static final Item WAXED_WEATHERED_COPPER_BULB = UNSUPPORTED;
+    //$$ public static final Item WAXED_OXIDIZED_COPPER_BULB = UNSUPPORTED;
+    //#endif
+
+    //#if MC <= 11605
     //$$ public static final Item COBBLED_DEEPSLATE = UNSUPPORTED;
     //$$ public static final Item CALCITE = UNSUPPORTED;
     //$$ public static final Item TUFF = UNSUPPORTED;
